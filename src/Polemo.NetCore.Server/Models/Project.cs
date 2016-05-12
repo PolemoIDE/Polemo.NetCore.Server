@@ -7,6 +7,8 @@ namespace Polemo.NetCore.Server.Models
 {
     public class Project
     {
+        public Guid Id { get; set; }
+        
         public string Git { get; set; }
 
         public string SSH { get; set; }
