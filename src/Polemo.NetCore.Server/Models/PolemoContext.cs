@@ -15,6 +15,10 @@ namespace Polemo.NetCore.Server.Models
 
         public DbSet<Template> Templates { get; set; }
 
+        public DbSet<RequestList> RequestLists { get; set; }
+
+        public DbSet<VerifyCode> VerifyCodes { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -22,6 +26,21 @@ namespace Polemo.NetCore.Server.Models
             builder.Entity<Template>(e =>
             {
                 e.HasIndex(x => x.PRI);
+            });
+
+            builder.Entity<RequestList>(e =>
+            {
+                e.HasIndex(x => x.IsFailed);
+                e.HasIndex(x => x.Time);
+                e.HasIndex(x => x.IP);
+            });
+
+            builder.Entity<VerifyCode>(e =>
+            {
+                e.HasIndex(x => x.Code);
+                e.HasIndex(x => x.Email);
+                e.HasIndex(x => x.Expire);
+                e.HasIndex(x => x.IsUsed);
             });
         }
     }
