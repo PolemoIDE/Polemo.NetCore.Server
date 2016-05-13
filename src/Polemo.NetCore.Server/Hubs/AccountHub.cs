@@ -120,8 +120,41 @@ namespace Polemo.NetCore.Server.Hubs
             return true;
         }
 
-        public string Register(string email)
+        public async Task<bool> Register(string email,int Verifycode, string username,string password)
         {
+            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
+            var UserManager = Context.Request.HttpContext.RequestServices.GetRequiredService<UserManager<User>>();
+            var user = DB.Users.Where(x => x.UserName == username).SingleOrDefault();
+            if (user != null)
+            {
+                return false;
+            }
+            else
+            {
+               var code= DB.VerifyCodes.Where(x => x.Type == VerifyCodeType.Register&&x.Email==email && x.Code == Verifycode).SingleOrDefault();
+                if (code!=null)
+                {
+                    var newuser = new User
+                    {
+                        Email = email,
+                        UserName = username,
+                    };
+                    await UserManager.CreateAsync(newuser, password);
+               var codes = DB.VerifyCodes
+                .Where(x => x.Email == email && x.Type == VerifyCodeType.Register && x.Expire > DateTime.Now && !x.IsUsed)
+                .ToList();
+                    foreach (var c in codes)
+                        c.Expire = DateTime.Now;
+                    var VerifyCode = new VerifyCode { Expire = DateTime.Now.AddHours(1), Email = email, Code = (new Random()).Next(1000, 9999), Type = VerifyCodeType.Register };
+                    DB.VerifyCodes.Add(VerifyCode);
+                    DB.SaveChanges();
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
             
         }
     }
