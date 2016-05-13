@@ -120,6 +120,23 @@ namespace Polemo.NetCore.Server.Hubs
             return true;
         }
 
+        public async Task<bool> ResetPassword(string currentpwd,string newpwd)
+        {
+            var UserManager = Context.Request.HttpContext.RequestServices.GetRequiredService<UserManager<User>>();
+            var SignInManager = Context.Request.HttpContext.RequestServices.GetRequiredService<SignInManager<User>>();
+
+            var result = await UserManager.ChangePasswordAsync(await UserManager.FindByNameAsync(Context.Request.HttpContext.User.Identity.Name), currentpwd, newpwd);
+            if (result.Succeeded)
+            {
+                await SignInManager.SignOutAsync();
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         public async Task<bool> Register(string email,int Verifycode, string username,string password)
         {
             var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
@@ -156,6 +173,11 @@ namespace Polemo.NetCore.Server.Hubs
                 }
             }
             
+        }
+
+        public bool  GetProjectTemplates()
+        {
+            return true;
         }
     }
 }
