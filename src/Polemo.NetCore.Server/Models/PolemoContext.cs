@@ -15,7 +15,7 @@ namespace Polemo.NetCore.Server.Models
 
         public DbSet<Template> Templates { get; set; }
 
-        public DbSet<RequestList> RequestLists { get; set; }
+        public DbSet<RequestDeniedLog> RequestLists { get; set; }
 
         public DbSet<VerifyCode> VerifyCodes { get; set; }
 
@@ -28,9 +28,8 @@ namespace Polemo.NetCore.Server.Models
                 e.HasIndex(x => x.PRI);
             });
 
-            builder.Entity<RequestList>(e =>
+            builder.Entity<RequestDeniedLog>(e =>
             {
-                e.HasIndex(x => x.IsFailed);
                 e.HasIndex(x => x.Time);
                 e.HasIndex(x => x.IP);
             });

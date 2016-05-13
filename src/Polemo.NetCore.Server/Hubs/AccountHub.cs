@@ -14,10 +14,17 @@ namespace Polemo.NetCore.Server.Hubs
     {
         public async Task<object> SignIn(string username, string password)
         {
-            // TODO: 需要建立一个HashTable，来记录每个IP的失败次数，1小时内失败次数超过10次则拒绝接受来自该IP的请求
-
+            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
             var SignInManager = Context.Request.HttpContext.RequestServices.GetRequiredService<SignInManager<User>>();
             var UserManager = Context.Request.HttpContext.RequestServices.GetRequiredService<UserManager<User>>();
+
+            // 检查是否请求次数过多
+            var time = DateTime.Now.AddHours(-1);
+            var cnt = DB.RequestLists
+                .Count(x => x.IP == Context.Request.HttpContext.Connection.RemoteIpAddress.ToString() && x.Time >= time);
+            if (cnt > 10)
+                return false;
+
             var result = await SignInManager.PasswordSignInAsync(username, password, true, false);
             if (result.Succeeded)
             {
@@ -28,6 +35,8 @@ namespace Polemo.NetCore.Server.Hubs
             }
             else
             {
+                DB.RequestLists.Add(new RequestDeniedLog { IP = Context.Request.HttpContext.Connection.RemoteIpAddress.ToString(), Time = DateTime.Now });
+                DB.SaveChanges();
                 return new { IsSucceeded = false, Token = string.Empty };
             }
         }
@@ -40,8 +49,16 @@ namespace Polemo.NetCore.Server.Hubs
 
         public async Task<bool> TokenSignIn(string token)
         {
-            // TODO: 需要建立一个HashTable，来记录每个IP的失败次数，1小时内失败次数超过10次则拒绝接受来自该IP的请求
+            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
             var SignInManager = Context.Request.HttpContext.RequestServices.GetRequiredService<SignInManager<User>>();
+            
+            // 检查是否请求次数过多
+            var time = DateTime.Now.AddHours(-1);
+            var cnt = DB.RequestLists
+                .Count(x => x.IP == Context.Request.HttpContext.Connection.RemoteIpAddress.ToString() && x.Time >= time);
+            if (cnt > 10)
+                return false;
+
             var result = await SignInManager.ExternalLoginSignInAsync("Polemo", token, true);
             if (result.Succeeded)
             {
@@ -55,25 +72,33 @@ namespace Polemo.NetCore.Server.Hubs
 
         public async Task<bool> ForgotVerifyEmail(string Email)
         {
-            // TODO: 需要建立HashTable记录一小时内验证信请求次数，超过10次拒绝请求，否则会被视为垃圾邮件被封禁SMTP服务。
             var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
-            var time = DateTime.Now.AddHours(-1);
-            var cnt = DB.RequestLists
-                .Count(x => x.IP == Context.Request.HttpContext.Connection.RemoteIpAddress.ToString() && x.IsFailed && x.Time >= time);
-            if (cnt > 10)
-                return false;
             var EmailSender = Context.Request.HttpContext.RequestServices.GetRequiredService<IEmailSender>();
-            var VerifyCode = (new Random()).Next(1000, 9999);
-            await EmailSender.SendEmailAsync(Email, "Retrieve Password Letter", );
+            
+            // 检查Email是否存在
+            if (DB.Users.Count(x => x.Email == Email) == 0)
+                return false;
+
+            // 将先前的验证码作废
+            var codes = DB.VerifyCodes
+                .Where(x => x.Email == Email && x.Type == VerifyCodeType.Forgot && x.Expire > DateTime.Now && !x.IsUsed)
+                .ToList();
+            foreach (var c in codes)
+                c.Expire = DateTime.Now;
+
+            // 将验证码信息写入数据库
+            var VerifyCode = new VerifyCode { Expire = DateTime.Now.AddHours(1), Email = Email, Code = (new Random()).Next(1000, 9999), Type = VerifyCodeType.Forgot };
+            DB.VerifyCodes.Add(VerifyCode);
+
+            DB.SaveChanges();
+
+            await EmailSender.SendEmailAsync(Email, "Retrieve Password Letter", "Your code is: " + VerifyCode.Code);
             return true;
         }
 
         public string Register(string email)
         {
-            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
-            if (DB.Users.SingleOrDefault(x => x.Email == email) != null)
-                return "抱歉，该邮箱已经注册过Polemo账号，请更换后重试！";
-            return $"我们已经向电子邮箱{email}中发送了验证码，请您查阅邮件，并继续完成后续的注册步骤！";
+            
         }
     }
 }
