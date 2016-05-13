@@ -12,5 +12,17 @@ namespace Polemo.NetCore.Server.Models
         public DbSet<Project> Projects { get; set; }
 
         public DbSet<Node> Nodes { get; set; }
+
+        public DbSet<Template> Templates { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            builder.Entity<Template>(e =>
+            {
+                e.HasIndex(x => x.PRI);
+            });
+        }
     }
 }
