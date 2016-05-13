@@ -25,6 +25,7 @@ namespace Polemo.NetCore.Server.Hubs
             if (cnt > 10)
                 return false;
 
+            // 执行登录
             var result = await SignInManager.PasswordSignInAsync(username, password, true, false);
             if (result.Succeeded)
             {
@@ -59,6 +60,7 @@ namespace Polemo.NetCore.Server.Hubs
             if (cnt > 10)
                 return false;
 
+            // 执行登录
             var result = await SignInManager.ExternalLoginSignInAsync("Polemo", token, true);
             if (result.Succeeded)
             {
@@ -93,6 +95,28 @@ namespace Polemo.NetCore.Server.Hubs
             DB.SaveChanges();
 
             await EmailSender.SendEmailAsync(Email, "Retrieve Password Letter", "Your code is: " + VerifyCode.Code);
+            return true;
+        }
+
+        public async Task<bool> Forgot (string Email, int Code, string Password)
+        {
+            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
+            var UserManager = Context.Request.HttpContext.RequestServices.GetRequiredService<UserManager<User>>();
+
+            // 查找验证码
+            var code = DB.VerifyCodes.SingleOrDefault(x => x.Email == Email && x.Code == Code && DateTime.Now < x.Expire && !x.IsUsed);
+            if (code == null)
+                return false;
+
+            // 更新验证码信息
+            code.IsUsed = true;
+            code.Expire = DateTime.Now;
+            DB.SaveChanges();
+
+            // 更改密码
+            var user = await UserManager.FindByEmailAsync(Email);
+            var token = await UserManager.GeneratePasswordResetTokenAsync(user);
+            await UserManager.ResetPasswordAsync(user, token, Password);
             return true;
         }
 
