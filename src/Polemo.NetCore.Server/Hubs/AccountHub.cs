@@ -137,6 +137,28 @@ namespace Polemo.NetCore.Server.Hubs
             }
         }
 
+        public async Task<bool> RegisterVerifyEmail(string email)
+        {
+            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
+            var EmailSender = Context.Request.HttpContext.RequestServices.GetRequiredService<IEmailSender>();
+
+            // 将先前的验证码作废
+            var codes = DB.VerifyCodes
+                .Where(x => x.Email == email && x.Type == VerifyCodeType.Register && x.Expire > DateTime.Now && !x.IsUsed)
+                .ToList();
+            foreach (var c in codes)
+                c.Expire = DateTime.Now;
+
+            // 将验证码信息写入数据库
+            var VerifyCode = new VerifyCode { Expire = DateTime.Now.AddHours(1), Email = email, Code = (new Random()).Next(1000, 9999), Type = VerifyCodeType.Register };
+            DB.VerifyCodes.Add(VerifyCode);
+
+            DB.SaveChanges();
+
+            await EmailSender.SendEmailAsync(email, "Retrieve Password Letter", "Your code is: " + VerifyCode.Code);
+            return true;
+        }
+
         public async Task<bool> Register(string email,int Verifycode, string username,string password)
         {
             var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
@@ -175,8 +197,82 @@ namespace Polemo.NetCore.Server.Hubs
             
         }
 
-        public bool  GetProjectTemplates()
+        public object GetProjectTemplates()
         {
+            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
+            var templates = DB.Templates
+                .OrderBy(x => x.Id)
+                .ToList();
+            if (templates.Count() != 0)
+            {
+                foreach (var x in templates)
+                {
+                    return new { Title = x.Title, URL = x.URL, Description = x.Description };
+                }
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+            
+        }
+
+        public object GetProjects()
+        {
+            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
+            var projects = DB.Projects
+                .Where(x=>x.UserName==Context.Request.HttpContext.User.Identity.Name)
+                .OrderByDescending(x => x.UpdatedTime)
+                .ToList();
+            if (projects.Count() != 0)
+            {
+                foreach(var x in projects)
+                {
+                    return new
+                    {
+                        Project = x.Title,
+                        Git = x.Git,
+                        SshKey = x.SSH,
+                        Name = x.UserName,
+                        Email = x.Email
+                    };
+                }
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool CreateProject(string PTitle, string Git, string SshKey, string Email)
+        {
+            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
+            var user = DB.Users.Where(x => x.UserName == Context.Request.HttpContext.User.Identity.Name)
+                .SingleOrDefault();
+            var project = new Project
+            {
+                Title = PTitle,
+                Git = Git,
+                SSH = SshKey,
+                UserName = user.UserName,
+                Email = Email,
+                UpdatedTime = DateTime.Now,
+            };
+            DB.Projects.Add(project);
+            DB.SaveChanges();
+            return true;
+        }
+
+        public bool OpenProject(string Git)
+        {
+            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
+            var project = DB.Projects
+                .Where(x => x.Git == Git)
+                .SingleOrDefault();
+            project.UpdatedTime = DateTime.Now;
+            DB.SaveChanges();
             return true;
         }
     }
