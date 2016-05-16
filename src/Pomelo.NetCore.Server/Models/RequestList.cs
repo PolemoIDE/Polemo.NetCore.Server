@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace Polemo.NetCore.Server.Models
+namespace Pomelo.NetCore.Server.Models
 {
     public class RequestDeniedLog
     {

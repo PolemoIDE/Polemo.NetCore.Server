@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Polemo.NetCore.Server.Models
+namespace Pomelo.NetCore.Server.Models
 {
     public enum VerifyCodeType
     {

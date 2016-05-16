@@ -11,7 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		NuGet.config = NuGet.config
 	EndProjectSection
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Polemo.NetCore.Server", "src\Polemo.NetCore.Server\Polemo.NetCore.Server.xproj", "{BAC3F561-FE82-4CD5-9A38-97048E319CB7}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Pomelo.NetCore.Server", "src\Pomelo.NetCore.Server\Pomelo.NetCore.Server.xproj", "{BAC3F561-FE82-4CD5-9A38-97048E319CB7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

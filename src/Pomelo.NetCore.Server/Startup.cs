@@ -7,22 +7,22 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Polemo.NetCore.Server.Models;
+using Pomelo.NetCore.Server.Models;
 
-namespace Polemo.NetCore.Server
+namespace Pomelo.NetCore.Server
 {
     public class Startup
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddCors(c => c.AddPolicy("Polemo", x =>
+            services.AddCors(c => c.AddPolicy("Pomelo", x =>
                 x.AllowCredentials()
                     .AllowAnyOrigin()
                     .AllowAnyMethod()
                     .AllowAnyHeader()
             ));
 
-            services.AddDbContext<PolemoContext>(x => 
+            services.AddDbContext<PomeloContext>(x => 
                 x.UseNpgsql("User ID=postgres;Password=123456;Host=localhost;Port=5432;Database=polemo;"));
 
 
@@ -36,7 +36,7 @@ namespace Polemo.NetCore.Server
                 x.User.AllowedUserNameCharacters = null;
             })
                 .AddDefaultTokenProviders()
-                .AddEntityFrameworkStores<PolemoContext>();
+                .AddEntityFrameworkStores<PomeloContext>();
 
             services.AddLogging();
             services.AddSmtpEmailSender("smtp.exmail.qq.com", 25, "码锋科技", "service@codecomb.com", "service@codecomb.com", "Yuuko19931101");
@@ -45,7 +45,7 @@ namespace Polemo.NetCore.Server
         public void Configure(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {
             loggerFactory.AddConsole(minLevel: LogLevel.Warning);
-            app.UseCors("Polemo");
+            app.UseCors("Pomelo");
             app.UseSignalR();
             app.UseIdentity();
         }

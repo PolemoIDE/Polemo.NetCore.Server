@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace Polemo.NetCore.Server.Models
+namespace Pomelo.NetCore.Server.Models
 {
-    public class PolemoContext : IdentityDbContext<User>
+    public class PomeloContext : IdentityDbContext<User>
     {
         public DbSet<Project> Projects { get; set; }
 

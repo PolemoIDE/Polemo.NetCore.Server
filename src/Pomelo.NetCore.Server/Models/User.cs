@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
-namespace Polemo.NetCore.Server.Models
+namespace Pomelo.NetCore.Server.Models
 {
     public class User : IdentityUser
     {

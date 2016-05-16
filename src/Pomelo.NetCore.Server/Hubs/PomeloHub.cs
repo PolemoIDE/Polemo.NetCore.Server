@@ -5,11 +5,11 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-using Polemo.NetCore.Server.Models;
+using Pomelo.NetCore.Server.Models;
 
-namespace Polemo.NetCore.Server.Hubs
+namespace Pomelo.NetCore.Server.Hubs
 {
-    public partial class PolemoHub : Hub
+    public partial class PomeloHub : Hub
     {
         public override Task OnConnected()
         {

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 
-namespace Polemo.NetCore.Server
+namespace Pomelo.NetCore.Server
 {
     public class Program
     {

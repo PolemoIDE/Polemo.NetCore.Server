@@ -5,16 +5,16 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-using Polemo.NetCore.Server.Models;
+using Pomelo.NetCore.Server.Models;
 using CodeComb.Net.EmailSender;
 
-namespace Polemo.NetCore.Server.Hubs
+namespace Pomelo.NetCore.Server.Hubs
 {
-    public partial class PolemoHub : Hub
+    public partial class PomeloHub : Hub
     {
         public async Task<object> SignIn(string username, string password)
         {
-            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
+            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PomeloContext>();
             var SignInManager = Context.Request.HttpContext.RequestServices.GetRequiredService<SignInManager<User>>();
             var UserManager = Context.Request.HttpContext.RequestServices.GetRequiredService<UserManager<User>>();
 
@@ -31,7 +31,7 @@ namespace Polemo.NetCore.Server.Hubs
             {
                 var user = await UserManager.FindByNameAsync(username);
                 var token = Guid.NewGuid().ToString();
-                await UserManager.AddLoginAsync(user, new UserLoginInfo("Polemo", token, "Polemo"));
+                await UserManager.AddLoginAsync(user, new UserLoginInfo("Pomelo", token, "Pomelo"));
                 return new { IsSucceeded = true, Token = token };
             }
             else
@@ -50,7 +50,7 @@ namespace Polemo.NetCore.Server.Hubs
 
         public async Task<bool> TokenSignIn(string token)
         {
-            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
+            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PomeloContext>();
             var SignInManager = Context.Request.HttpContext.RequestServices.GetRequiredService<SignInManager<User>>();
             
             // 检查是否请求次数过多
@@ -61,7 +61,7 @@ namespace Polemo.NetCore.Server.Hubs
                 return false;
 
             // 执行登录
-            var result = await SignInManager.ExternalLoginSignInAsync("Polemo", token, true);
+            var result = await SignInManager.ExternalLoginSignInAsync("Pomelo", token, true);
             if (result.Succeeded)
             {
                 return true;
@@ -74,7 +74,7 @@ namespace Polemo.NetCore.Server.Hubs
 
         public async Task<bool> ForgotVerifyEmail(string Email)
         {
-            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
+            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PomeloContext>();
             var EmailSender = Context.Request.HttpContext.RequestServices.GetRequiredService<IEmailSender>();
             
             // 检查Email是否存在
@@ -100,7 +100,7 @@ namespace Polemo.NetCore.Server.Hubs
 
         public async Task<bool> Forgot (string Email, int Code, string Password)
         {
-            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
+            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PomeloContext>();
             var UserManager = Context.Request.HttpContext.RequestServices.GetRequiredService<UserManager<User>>();
 
             // 查找验证码
@@ -139,7 +139,7 @@ namespace Polemo.NetCore.Server.Hubs
 
         public async Task<bool> RegisterVerifyEmail(string email)
         {
-            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
+            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PomeloContext>();
             var EmailSender = Context.Request.HttpContext.RequestServices.GetRequiredService<IEmailSender>();
 
             // 将先前的验证码作废
@@ -161,7 +161,7 @@ namespace Polemo.NetCore.Server.Hubs
 
         public async Task<bool> Register(string email,int Verifycode, string username,string password)
         {
-            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
+            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PomeloContext>();
             var UserManager = Context.Request.HttpContext.RequestServices.GetRequiredService<UserManager<User>>();
             var user = DB.Users.Where(x => x.UserName == username).SingleOrDefault();
             if (user != null)
@@ -199,7 +199,7 @@ namespace Polemo.NetCore.Server.Hubs
 
         public object GetProjectTemplates()
         {
-            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
+            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PomeloContext>();
             var templates = DB.Templates
                 .OrderBy(x => x.Id)
                 .ToList();
@@ -220,7 +220,7 @@ namespace Polemo.NetCore.Server.Hubs
 
         public object GetProjects()
         {
-            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
+            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PomeloContext>();
             var projects = DB.Projects
                 .Where(x=>x.UserName==Context.Request.HttpContext.User.Identity.Name)
                 .OrderByDescending(x => x.UpdatedTime)
@@ -248,7 +248,7 @@ namespace Polemo.NetCore.Server.Hubs
 
         public bool CreateProject(string PTitle, string Git, string SshKey, string Email)
         {
-            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
+            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PomeloContext>();
             var user = DB.Users.Where(x => x.UserName == Context.Request.HttpContext.User.Identity.Name)
                 .SingleOrDefault();
             var project = new Project
@@ -267,7 +267,7 @@ namespace Polemo.NetCore.Server.Hubs
 
         public bool OpenProject(string Git)
         {
-            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PolemoContext>();
+            var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PomeloContext>();
             var project = DB.Projects
                 .Where(x => x.Git == Git)
                 .SingleOrDefault();

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 
-namespace Polemo.NetCore.Server.Models
+namespace Pomelo.NetCore.Server.Models
 {
     public class Node
     {
