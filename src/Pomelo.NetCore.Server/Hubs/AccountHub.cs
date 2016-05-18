@@ -46,6 +46,13 @@ namespace Pomelo.NetCore.Server.Hubs
                     if (!vmcreated || !ipStatus.Item1)
                         return new { IsSucceeded = false, Token = string.Empty, VMIP = string.Empty };
                     vmIpAddr = ipStatus.Item2.ToString();
+
+                    // Create Node, save, add to claim
+                    var random = Guid.NewGuid().ToString();
+                    var node = new Node { IP = vmIpAddr, PrivateKey = random, Id = Guid.NewGuid(), Alias = random };
+                    DB.Nodes.Add(node);
+                    await DB.SaveChangesAsync();
+                    await UserManager.AddClaimAsync(user, new System.Security.Claims.Claim("Owned VM", node.Id.ToString()));
                 }
                 else
                 {
@@ -81,7 +88,7 @@ namespace Pomelo.NetCore.Server.Hubs
             var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PomeloContext>();
             var SignInManager = Context.Request.HttpContext.RequestServices.GetRequiredService<SignInManager<User>>();
             var UserManager = Context.Request.HttpContext.RequestServices.GetRequiredService<UserManager<User>>();
-            
+
             // 检查是否请求次数过多
             var time = DateTime.Now.AddHours(-1);
             var cnt = DB.RequestLists
@@ -106,6 +113,13 @@ namespace Pomelo.NetCore.Server.Hubs
                     if (!vmcreated || !ipStatus.Item1)
                         return new { IsSucceeded = false, VMIP = string.Empty };
                     vmIpAddr = ipStatus.Item2.ToString();
+
+                    // Create Node, save, add to claim
+                    var random = Guid.NewGuid().ToString();
+                    var node = new Node { IP = vmIpAddr, PrivateKey = random, Id = Guid.NewGuid(), Alias = random };
+                    DB.Nodes.Add(node);
+                    await DB.SaveChangesAsync();
+                    await UserManager.AddClaimAsync(user, new System.Security.Claims.Claim("Owned VM", node.Id.ToString()));
                 }
                 else
                 {
@@ -116,14 +130,13 @@ namespace Pomelo.NetCore.Server.Hubs
                     // Start VM
                     var vmStarted = await Program.VMManagetment.StartVirtualMachineAsync(user.UserName);
                     if (!vmStarted)
-                        return new { IsSucceeded = false, Token = string.Empty, VMIP = string.Empty };
+                        return new { IsSucceeded = false, VMIP = string.Empty };
                 }
-
-                return true;
+                return new { IsSucceeded = true, VMIP = vmIpAddr };
             }
             else
             {
-                return false;
+                return new { IsSucceeded = false, VMIP = string.Empty };
             }
         }
 
