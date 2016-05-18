@@ -32,14 +32,42 @@ namespace Pomelo.NetCore.Server.Hubs
                 var user = await UserManager.FindByNameAsync(username);
                 var token = Guid.NewGuid().ToString();
                 await UserManager.AddLoginAsync(user, new UserLoginInfo("Pomelo", token, "Pomelo"));
-                return new { IsSucceeded = true, Token = token };
+
+                // Create & Start VM
+                var claims = await UserManager.GetClaimsAsync(user);
+                var nodeClaim = claims.Where(x => x.Type == "Owned VM");
+
+                string vmIpAddr;
+                if (nodeClaim.Count() == 0)
+                {
+                    // Create VM
+                    var vmcreated = await Program.VMManagetment.CreateVirtualMachineAsync(username, "pomelo", "Pomelo123!@#");
+                    var ipStatus = await Program.VMManagetment.GetPublicIPAddressAsync(username);
+                    if (!vmcreated || !ipStatus.Item1)
+                        return new { IsSucceeded = false, Token = string.Empty, VMIP = string.Empty };
+                    vmIpAddr = ipStatus.Item2.ToString();
+                }
+                else
+                {
+                    var nodeId = Guid.Parse(nodeClaim.First().Value);
+                    var node = DB.Nodes.Where(x => x.Id == nodeId).First();
+                    vmIpAddr = node.IP;
+
+                    // Start VM
+                    var vmStarted = await Program.VMManagetment.StartVirtualMachineAsync(username);
+                    if (!vmStarted)
+                        return new { IsSucceeded = false, Token = string.Empty, VMIP = string.Empty };
+                }
+
+                return new { IsSucceeded = true, Token = token, VMIP = vmIpAddr };
             }
             else
             {
                 DB.RequestLists.Add(new RequestDeniedLog { IP = Context.Request.HttpContext.Connection.RemoteIpAddress.ToString(), Time = DateTime.Now });
                 DB.SaveChanges();
-                return new { IsSucceeded = false, Token = string.Empty };
+                return new { IsSucceeded = false, Token = string.Empty, VMIP = string.Empty };
             }
+
         }
 
         public async void SignOut()
@@ -48,22 +76,49 @@ namespace Pomelo.NetCore.Server.Hubs
             await SignInManager.SignOutAsync();
         }
 
-        public async Task<bool> TokenSignIn(string token)
+        public async Task<object> TokenSignIn(string token)
         {
             var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PomeloContext>();
             var SignInManager = Context.Request.HttpContext.RequestServices.GetRequiredService<SignInManager<User>>();
+            var UserManager = Context.Request.HttpContext.RequestServices.GetRequiredService<UserManager<User>>();
             
             // 检查是否请求次数过多
             var time = DateTime.Now.AddHours(-1);
             var cnt = DB.RequestLists
                 .Count(x => x.IP == Context.Request.HttpContext.Connection.RemoteIpAddress.ToString() && x.Time >= time);
             if (cnt > 10)
-                return false;
+                return new { IsSucceeded = false, VMIP = string.Empty };
 
             // 执行登录
             var result = await SignInManager.ExternalLoginSignInAsync("Pomelo", token, true);
             if (result.Succeeded)
             {
+                var user = await UserManager.FindByLoginAsync("Pomelo", token);
+                var claims = await UserManager.GetClaimsAsync(user);
+                var nodeClaim = claims.Where(x => x.Type == "Owned VM");
+
+                string vmIpAddr;
+                if (nodeClaim.Count() == 0)
+                {
+                    // Create VM
+                    var vmcreated = await Program.VMManagetment.CreateVirtualMachineAsync(user.UserName, "pomelo", "Pomelo123!@#");
+                    var ipStatus = await Program.VMManagetment.GetPublicIPAddressAsync(user.UserName);
+                    if (!vmcreated || !ipStatus.Item1)
+                        return new { IsSucceeded = false, VMIP = string.Empty };
+                    vmIpAddr = ipStatus.Item2.ToString();
+                }
+                else
+                {
+                    var nodeId = Guid.Parse(nodeClaim.First().Value);
+                    var node = DB.Nodes.Where(x => x.Id == nodeId).First();
+                    vmIpAddr = node.IP;
+
+                    // Start VM
+                    var vmStarted = await Program.VMManagetment.StartVirtualMachineAsync(user.UserName);
+                    if (!vmStarted)
+                        return new { IsSucceeded = false, Token = string.Empty, VMIP = string.Empty };
+                }
+
                 return true;
             }
             else
@@ -76,7 +131,7 @@ namespace Pomelo.NetCore.Server.Hubs
         {
             var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PomeloContext>();
             var EmailSender = Context.Request.HttpContext.RequestServices.GetRequiredService<IEmailSender>();
-            
+
             // 检查Email是否存在
             if (DB.Users.Count(x => x.Email == Email) == 0)
                 return false;
@@ -98,7 +153,7 @@ namespace Pomelo.NetCore.Server.Hubs
             return true;
         }
 
-        public async Task<bool> Forgot (string Email, int Code, string Password)
+        public async Task<bool> Forgot(string Email, int Code, string Password)
         {
             var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PomeloContext>();
             var UserManager = Context.Request.HttpContext.RequestServices.GetRequiredService<UserManager<User>>();
@@ -120,7 +175,7 @@ namespace Pomelo.NetCore.Server.Hubs
             return true;
         }
 
-        public async Task<bool> ResetPassword(string currentpwd,string newpwd)
+        public async Task<bool> ResetPassword(string currentpwd, string newpwd)
         {
             var UserManager = Context.Request.HttpContext.RequestServices.GetRequiredService<UserManager<User>>();
             var SignInManager = Context.Request.HttpContext.RequestServices.GetRequiredService<SignInManager<User>>();
@@ -159,7 +214,7 @@ namespace Pomelo.NetCore.Server.Hubs
             return true;
         }
 
-        public async Task<bool> Register(string email,int Verifycode, string username,string password)
+        public async Task<bool> Register(string email, int Verifycode, string username, string password)
         {
             var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PomeloContext>();
             var UserManager = Context.Request.HttpContext.RequestServices.GetRequiredService<UserManager<User>>();
@@ -170,8 +225,8 @@ namespace Pomelo.NetCore.Server.Hubs
             }
             else
             {
-               var code= DB.VerifyCodes.Where(x => x.Type == VerifyCodeType.Register&&x.Email==email && x.Code == Verifycode).SingleOrDefault();
-                if (code!=null)
+                var code = DB.VerifyCodes.Where(x => x.Type == VerifyCodeType.Register && x.Email == email && x.Code == Verifycode).SingleOrDefault();
+                if (code != null)
                 {
                     var newuser = new User
                     {
@@ -179,9 +234,9 @@ namespace Pomelo.NetCore.Server.Hubs
                         UserName = username,
                     };
                     await UserManager.CreateAsync(newuser, password);
-               var codes = DB.VerifyCodes
-                .Where(x => x.Email == email && x.Type == VerifyCodeType.Register && x.Expire > DateTime.Now && !x.IsUsed)
-                .ToList();
+                    var codes = DB.VerifyCodes
+                     .Where(x => x.Email == email && x.Type == VerifyCodeType.Register && x.Expire > DateTime.Now && !x.IsUsed)
+                     .ToList();
                     foreach (var c in codes)
                         c.Expire = DateTime.Now;
                     var VerifyCode = new VerifyCode { Expire = DateTime.Now.AddHours(1), Email = email, Code = (new Random()).Next(1000, 9999), Type = VerifyCodeType.Register };
@@ -194,7 +249,7 @@ namespace Pomelo.NetCore.Server.Hubs
                     return false;
                 }
             }
-            
+
         }
 
         public object GetProjectTemplates()
@@ -215,19 +270,19 @@ namespace Pomelo.NetCore.Server.Hubs
             {
                 return false;
             }
-            
+
         }
 
         public object GetProjects()
         {
             var DB = Context.Request.HttpContext.RequestServices.GetRequiredService<PomeloContext>();
             var projects = DB.Projects
-                .Where(x=>x.UserName==Context.Request.HttpContext.User.Identity.Name)
+                .Where(x => x.UserName == Context.Request.HttpContext.User.Identity.Name)
                 .OrderByDescending(x => x.UpdatedTime)
                 .ToList();
             if (projects.Count() != 0)
             {
-                foreach(var x in projects)
+                foreach (var x in projects)
                 {
                     return new
                     {
