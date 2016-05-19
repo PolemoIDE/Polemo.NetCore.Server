@@ -79,6 +79,8 @@ namespace Pomelo.NetCore.Server.Hubs
 
         public async void SignOut()
         {
+            await Program.VMManagetment.DeallocateVirtualMachineAsync(Context.User.Identity.Name);
+
             var SignInManager = Context.Request.HttpContext.RequestServices.GetRequiredService<SignInManager<User>>();
             await SignInManager.SignOutAsync();
         }

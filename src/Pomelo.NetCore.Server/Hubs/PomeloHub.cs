@@ -12,6 +12,8 @@ namespace Pomelo.NetCore.Server.Hubs
 {
     public partial class PomeloHub : Hub
     {
+        private IDictionary<string, string> UserConnectionIdDictionary = new Dictionary<string, string>();
+
         public override Task OnConnected()
         {
             return base.OnConnected();
@@ -19,6 +21,18 @@ namespace Pomelo.NetCore.Server.Hubs
 
         public override Task OnDisconnected(bool stopCalled)
         {
+            // FIXME: change it
+            var username = "";
+            UserConnectionIdDictionary.Add(username, Context.ConnectionId);
+
+            Task.Factory.StartNew(async () =>
+            {
+                await Task.Delay(600000);
+
+
+                await Program.VMManagetment.DeallocateVirtualMachineAsync(username);
+            });
+
             return base.OnDisconnected(stopCalled);
         }
     }
