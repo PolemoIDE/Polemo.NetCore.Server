@@ -13,7 +13,7 @@
     "Microsoft.EntityFrameworkCore.Sqlite": "1.0.0-rc2-final",
     "CodeComb.Net.EmailSender": "2.0.0-rc2-final",
     "Newtonsoft.Json": "8.0.3",
-    "Pomelo.NetCore.Azure": "1.0.0"
+    "Pomelo.NetCore.Azure": "1.0.1"
   },
 
   "commands": {
