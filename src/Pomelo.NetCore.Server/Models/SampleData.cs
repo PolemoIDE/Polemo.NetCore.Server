@@ -10,7 +10,7 @@ namespace Pomelo.NetCore.Server.Models
 {
     public static class SampleData
     {
-        public static async void InitDB(IServiceProvider services)
+        public static async Task InitDB(IServiceProvider services)
         {
             var DB = services.GetRequiredService<PomeloContext>();
             var UserManager = services.GetRequiredService<UserManager<User>>();

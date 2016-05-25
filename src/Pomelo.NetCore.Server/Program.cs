@@ -15,6 +15,7 @@ namespace Pomelo.NetCore.Server
         {
             var host = new WebHostBuilder()
                 .UseKestrel()
+                .UseUrls("http://*:50557")
                 .UseContentRoot(Directory.GetCurrentDirectory())
                     .UseStartup<Startup>()
                     .Build();
