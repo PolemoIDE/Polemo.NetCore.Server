@@ -20,7 +20,8 @@ namespace Pomelo.NetCore.Server
                     .Build();
 
             VMManagetment = new Azure.VMManagement("6fef287b-09fc-4d87-8dc1-bb154aa68b7a", "821e2823-d712-46fb-885c-46cc60d8ee66",
-                "60b8650e-26f1-4782-b740-955f551d0776", "7H2sjm1GG7qf3+cSZ3sGl7VivwstyhWeTkEkS+ENIOw=");
+                "60b8650e-26f1-4782-b740-955f551d0776", "7H2sjm1GG7qf3+cSZ3sGl7VivwstyhWeTkEkS+ENIOw=",
+                "https://pomeloide.blob.core.windows.net/system/Microsoft.Compute/Images/image/node-osDisk.a6ec0791-e772-405b-ab17-d7fbbaf67390.vhd");
 
             host.Run();
         }
