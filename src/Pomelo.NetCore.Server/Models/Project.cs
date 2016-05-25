@@ -11,7 +11,7 @@ namespace Pomelo.NetCore.Server.Models
         
         public string Git { get; set; }
 
-        public string SSH { get; set; }
+        public string Password { get; set; }
 
         public string Title { get; set; }
 

@@ -23,8 +23,7 @@ namespace Pomelo.NetCore.Server
             ));
 
             services.AddDbContext<PomeloContext>(x => 
-                x.UseNpgsql("User ID=postgres;Password=123456;Host=localhost;Port=5432;Database=polemo;"));
-
+                x.UseSqlite("Data source=pomelo.db"));
 
             services.AddIdentity<User, IdentityRole>(x =>
             {
@@ -40,14 +39,18 @@ namespace Pomelo.NetCore.Server
 
             services.AddLogging();
             services.AddSmtpEmailSender("smtp.exmail.qq.com", 25, "码锋科技", "service@codecomb.com", "service@codecomb.com", "Yuuko19931101");
+
+            services.AddSignalR();
         }
 
-        public void Configure(IApplicationBuilder app, ILoggerFactory loggerFactory)
+        public async void Configure(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {
             loggerFactory.AddConsole(minLevel: LogLevel.Warning);
             app.UseCors("Pomelo");
             app.UseSignalR();
             app.UseIdentity();
+
+            await SampleData.InitDB(app.ApplicationServices);
         }
     }
 }
